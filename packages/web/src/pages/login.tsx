@@ -21,8 +21,8 @@ export default function LoginPage() {
       })
 
       if (response.ok) {
-        const data = (await response.json()) as { token: string; user?: { username: string } }
-        localStorage.setItem('token', data.token)
+        const data = (await response.json()) as { access_token: string; user?: { username: string } }
+        localStorage.setItem('token', data.access_token)
         localStorage.setItem('username', data.user?.username ?? username)
         navigate('/')
       } else {

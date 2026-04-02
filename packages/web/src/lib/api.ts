@@ -34,11 +34,11 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 // Auth
 export async function login(username: string, password: string) {
-  const data = await apiFetch<{ token: string; user: { id: number; username: string; role: string } }>('/auth/login', {
+  const data = await apiFetch<{ access_token: string; user: { id: number; username: string; role: string } }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   })
-  localStorage.setItem('token', data.token)
+  localStorage.setItem('token', data.access_token)
   return data
 }
 
@@ -78,11 +78,11 @@ export function createHandover(data: unknown) {
 // Workshop
 export function getWorkshopOrders(params?: Record<string, string>) {
   const qs = params ? '?' + new URLSearchParams(params).toString() : ''
-  return apiFetch<{ data: unknown[]; total: number }>(`/workshop${qs}`)
+  return apiFetch<{ data: unknown[]; total: number }>(`/workshop-orders${qs}`)
 }
 
 export function createWorkshopOrder(data: unknown) {
-  return apiFetch<unknown>('/workshop', { method: 'POST', body: JSON.stringify(data) })
+  return apiFetch<unknown>('/workshop-orders', { method: 'POST', body: JSON.stringify(data) })
 }
 
 // Accidents
@@ -98,11 +98,11 @@ export function createAccident(data: unknown) {
 // Offenses
 export function getOffenses(params?: Record<string, string>) {
   const qs = params ? '?' + new URLSearchParams(params).toString() : ''
-  return apiFetch<{ data: unknown[]; total: number }>(`/offenses${qs}`)
+  return apiFetch<{ data: unknown[]; total: number }>(`/traffic-offenses${qs}`)
 }
 
 export function createOffense(data: unknown) {
-  return apiFetch<unknown>('/offenses', { method: 'POST', body: JSON.stringify(data) })
+  return apiFetch<unknown>('/traffic-offenses', { method: 'POST', body: JSON.stringify(data) })
 }
 
 // Tours (MilkyWay)
