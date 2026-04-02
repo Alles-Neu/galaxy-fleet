@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: galaxy
+      POSTGRES_PASSWORD: galaxy_dev
+      POSTGRES_DB: galaxy_fleet
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://galaxy:galaxy_dev@db:5432/galaxy_fleet
+      JWT_SECRET: dev-secret-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
+    depends_on:
+      - db
+    volumes:
+      - ./packages/api/src:/app/src
+      - ./packages/api/prisma:/app/prisma
+
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3000
+    volumes:
+      - ./packages/web/src:/app/src
+
+volumes:
+  pgdata:

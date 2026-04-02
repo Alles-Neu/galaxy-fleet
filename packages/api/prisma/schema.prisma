@@ -1,0 +1,455 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  address    String?
+  station_id Int?
+  station    Station?  @relation("CompanyStation", fields: [station_id], references: [id], onDelete: Restrict)
+  vehicles   Vehicle[]
+  employees  Employee[]
+  stations   Station[] @relation("StationCompany")
+
+  @@map("company")
+}
+
+model Station {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  full_name  String
+  address    String?
+  type       String    @default("depot")
+  client     String?
+  company_id Int?
+  company    Company?  @relation("StationCompany", fields: [company_id], references: [id], onDelete: Restrict)
+
+  vehicles_stationed Vehicle[]  @relation("VehicleStation")
+  companies_hq       Company[]  @relation("CompanyStation")
+  handovers_from     Handover[] @relation("HandoverFromStation")
+  handovers_to       Handover[] @relation("HandoverToStation")
+  workshops_from     WorkshopOrder[] @relation("WorkshopFromStation")
+  workshops_to       WorkshopOrder[] @relation("WorkshopToStation")
+  accidents          Accident[]
+  tours              Tour[]     @relation("TourStation")
+  support_tours      Tour[]     @relation("TourSupportStation")
+  inventory_checks   InventoryCheck[]
+  user_stations      UserStation[]
+
+  @@map("station")
+}
+
+model VehicleStatus {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  sort_order Int       @default(0)
+  vehicles   Vehicle[]
+
+  @@map("vehicle_status")
+}
+
+model VehicleBrand {
+  id       Int            @id @default(autoincrement())
+  name     String         @unique
+  models   VehicleModel[]
+  vehicles Vehicle[]
+
+  @@map("vehicle_brand")
+}
+
+model VehicleModel {
+  id       Int          @id @default(autoincrement())
+  name     String
+  brand_id Int
+  brand    VehicleBrand @relation(fields: [brand_id], references: [id], onDelete: Restrict)
+
+  @@map("vehicle_model")
+}
+
+model ProcurementType {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  vehicles Vehicle[]
+
+  @@map("procurement_type")
+}
+
+model InsuranceCompany {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  vehicles Vehicle[]
+
+  @@map("insurance_company")
+}
+
+model DocumentType {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  documents Document[]
+
+  @@map("document_type")
+}
+
+model OffenseType {
+  id       Int              @id @default(autoincrement())
+  name     String           @unique
+  offenses TrafficOffense[]
+
+  @@map("offense_type")
+}
+
+model OffenseAuthority {
+  id       Int              @id @default(autoincrement())
+  name     String           @unique
+  email    String?
+  offenses TrafficOffense[]
+
+  @@map("offense_authority")
+}
+
+model FaultType {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  accidents Accident[]
+
+  @@map("fault_type")
+}
+
+model AccidentProcessingStatus {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  accidents Accident[]
+
+  @@map("accident_processing_status")
+}
+
+model AbsenceType {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  tours Tour[]
+
+  @@map("absence_type")
+}
+
+model Vehicle {
+  id                   Int      @id @default(autoincrement())
+  license_plate        String   @unique
+  fin                  String?  @unique
+  qr_code              String?
+  brand_id             Int
+  brand                VehicleBrand     @relation(fields: [brand_id], references: [id], onDelete: Restrict)
+  model                String?
+  first_registration   DateTime?
+  company_id           Int
+  company              Company          @relation(fields: [company_id], references: [id], onDelete: Restrict)
+  station_id           Int
+  station              Station          @relation("VehicleStation", fields: [station_id], references: [id], onDelete: Restrict)
+  status_id            Int
+  status               VehicleStatus    @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  fleet_location       String?
+  km_reading           Int              @default(0)
+  alarm_odometer       Int              @default(0)
+  procurement_type_id  Int?
+  procurement_type     ProcurementType? @relation(fields: [procurement_type_id], references: [id], onDelete: Restrict)
+  procured_by          String?
+  procured_from        String?
+  insurance_company_id Int?
+  insurance_company    InsuranceCompany? @relation(fields: [insurance_company_id], references: [id], onDelete: Restrict)
+  insurance_number     String?
+  fully_comprehensive  Boolean          @default(false)
+  partial_coverage     Boolean          @default(false)
+  fc_deductible        Decimal?
+  pc_deductible        Decimal?
+  fire_extinguisher    Boolean          @default(false)
+  first_aid_kit        Boolean          @default(false)
+  kit_tool             Boolean          @default(false)
+  dkv_box              Boolean          @default(false)
+  dkv_box_number       String?
+  eu_licence           Boolean          @default(false)
+  eu_licence_number    String?
+  speed_limited        Boolean          @default(false)
+  gps_tracking         Boolean          @default(false)
+  gps_tracking_company String?
+  snow_chains          Boolean          @default(false)
+  fuel_card            Boolean          @default(false)
+  fuel_card_number     String?
+  private_trip_tracking Boolean         @default(false)
+  sticker_type         String           @default("Ohne")
+  service_vehicle      Boolean          @default(false)
+  weight_class         Int?
+  inventory_interval   String           @default("Monatlich")
+  created_at           DateTime         @default(now())
+  updated_at           DateTime         @updatedAt
+
+  handovers        Handover[]
+  workshop_orders  WorkshopOrder[]
+  accidents        Accident[]
+  offenses         TrafficOffense[]
+  tours            Tour[]
+  inventory_checks InventoryCheck[]
+  service_records  ServiceRecord[]
+  fuel_records     FuelRecord[]
+  documents        Document[]
+  images           VehicleImage[]
+  tickets          Ticket[]
+  change_logs      ChangeLog[]
+
+  @@map("vehicle")
+}
+
+model Employee {
+  id               Int     @id @default(autoincrement())
+  personnel_number String  @unique
+  prefix           String?
+  full_name        String
+  company_id       Int
+  company          Company @relation(fields: [company_id], references: [id], onDelete: Restrict)
+  is_ad            Boolean @default(false)
+  active           Boolean @default(true)
+
+  handovers_from   Handover[]     @relation("HandoverFromEmployee")
+  handovers_to     Handover[]     @relation("HandoverToEmployee")
+  workshops_from   WorkshopOrder[] @relation("WorkshopFromEmployee")
+  workshops_to     WorkshopOrder[] @relation("WorkshopToEmployee")
+  tours            Tour[]
+
+  @@map("employee")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  role          String   @default("readonly")
+  active        Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  stations        UserStation[]
+  handovers       Handover[]
+  workshop_orders WorkshopOrder[]
+  documents       Document[]
+  images          VehicleImage[]
+  tickets         Ticket[]
+  change_logs     ChangeLog[]
+
+  @@map("user")
+}
+
+model UserStation {
+  user_id    Int
+  station_id Int
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  station    Station @relation(fields: [station_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, station_id])
+  @@map("user_station")
+}
+
+model Handover {
+  id                  Int      @id @default(autoincrement())
+  vehicle_id          Int
+  vehicle             Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  km_reading          Int
+  from_employee_id    Int?
+  from_employee       Employee? @relation("HandoverFromEmployee", fields: [from_employee_id], references: [id], onDelete: Restrict)
+  to_employee_id      Int?
+  to_employee         Employee? @relation("HandoverToEmployee", fields: [to_employee_id], references: [id], onDelete: Restrict)
+  from_station_id     Int
+  from_station        Station  @relation("HandoverFromStation", fields: [from_station_id], references: [id], onDelete: Restrict)
+  to_station_id       Int
+  to_station          Station  @relation("HandoverToStation", fields: [to_station_id], references: [id], onDelete: Restrict)
+  handover_date       DateTime
+  created_by_user_id  Int
+  created_by          User     @relation(fields: [created_by_user_id], references: [id], onDelete: Restrict)
+  confirmed           Boolean  @default(false)
+  created_at          DateTime @default(now())
+
+  @@map("handover")
+}
+
+model WorkshopOrder {
+  id                  Int      @id @default(autoincrement())
+  vehicle_id          Int
+  vehicle             Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  km_reading          Int
+  from_employee_id    Int?
+  from_employee       Employee? @relation("WorkshopFromEmployee", fields: [from_employee_id], references: [id], onDelete: Restrict)
+  to_employee_id      Int?
+  to_employee         Employee? @relation("WorkshopToEmployee", fields: [to_employee_id], references: [id], onDelete: Restrict)
+  from_station_id     Int
+  from_station        Station  @relation("WorkshopFromStation", fields: [from_station_id], references: [id], onDelete: Restrict)
+  to_station_id       Int
+  to_station          Station  @relation("WorkshopToStation", fields: [to_station_id], references: [id], onDelete: Restrict)
+  handover_date       DateTime
+  duration_days       Int      @default(0)
+  notes               String?
+  status              String   @default("neu")
+  created_by_user_id  Int
+  created_by          User     @relation(fields: [created_by_user_id], references: [id], onDelete: Restrict)
+  created_at          DateTime @default(now())
+
+  @@map("workshop_order")
+}
+
+model Accident {
+  id                    Int                       @id @default(autoincrement())
+  accident_date         DateTime
+  vehicle_id            Int
+  vehicle               Vehicle                   @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  station_id            Int
+  station               Station                   @relation(fields: [station_id], references: [id], onDelete: Restrict)
+  personnel_number      String?
+  driver_name           String?
+  status                String                    @default("nicht_abgearbeitet")
+  processing_status_id  Int?
+  processing_status     AccidentProcessingStatus? @relation(fields: [processing_status_id], references: [id], onDelete: Restrict)
+  fault_type_id         Int?
+  fault_type            FaultType?                @relation(fields: [fault_type_id], references: [id], onDelete: Restrict)
+  case_handler          String?
+  created_at            DateTime                  @default(now())
+
+  @@map("accident")
+}
+
+model TrafficOffense {
+  id                   Int               @id @default(autoincrement())
+  offense_date         DateTime
+  vehicle_id           Int
+  vehicle              Vehicle           @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  personnel_number     String?
+  driver_name          String?
+  offense_type_id      Int
+  offense_type         OffenseType       @relation(fields: [offense_type_id], references: [id], onDelete: Restrict)
+  authority_id         Int?
+  authority            OffenseAuthority? @relation(fields: [authority_id], references: [id], onDelete: Restrict)
+  fine_amount          Decimal           @default(0)
+  reference_number     String?
+  confirmation_status  String            @default("nicht_bestaetigt")
+  created_at           DateTime          @default(now())
+
+  @@map("traffic_offense")
+}
+
+model Tour {
+  id                Int          @id @default(autoincrement())
+  tour_number       String
+  station_id        Int
+  station           Station      @relation("TourStation", fields: [station_id], references: [id], onDelete: Restrict)
+  employee_id       Int?
+  employee          Employee?    @relation(fields: [employee_id], references: [id], onDelete: Restrict)
+  vehicle_id        Int?
+  vehicle           Vehicle?     @relation(fields: [vehicle_id], references: [id], onDelete: Restrict)
+  tour_date         DateTime
+  tour_type         String       @default("normal")
+  absence_type_id   Int?
+  absence_type      AbsenceType? @relation(fields: [absence_type_id], references: [id], onDelete: Restrict)
+  returns_count     Int          @default(0)
+  return_info       String?
+  support_station_id Int?
+  support_station   Station?     @relation("TourSupportStation", fields: [support_station_id], references: [id], onDelete: Restrict)
+  created_at        DateTime     @default(now())
+
+  @@map("tour")
+}
+
+model InventoryCheck {
+  id            Int      @id @default(autoincrement())
+  vehicle_id    Int
+  vehicle       Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  station_id    Int
+  station       Station  @relation(fields: [station_id], references: [id], onDelete: Restrict)
+  interval_type String
+  completed     Boolean  @default(false)
+  check_date    DateTime
+  created_at    DateTime @default(now())
+
+  @@map("inventory_check")
+}
+
+model ServiceRecord {
+  id             Int      @id @default(autoincrement())
+  vehicle_id     Int
+  vehicle        Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  service_date   DateTime
+  km_reading     Int
+  description    String?
+  alarm_odometer Int?
+  phone_number   String?
+  created_at     DateTime @default(now())
+
+  @@map("service_record")
+}
+
+model FuelRecord {
+  id          Int      @id @default(autoincrement())
+  vehicle_id  Int
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  record_date DateTime
+  km_reading  Int
+  fuel_amount String?
+  created_at  DateTime @default(now())
+
+  @@map("fuel_record")
+}
+
+model Document {
+  id                  Int          @id @default(autoincrement())
+  vehicle_id          Int
+  vehicle             Vehicle      @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  document_type_id    Int
+  document_type       DocumentType @relation(fields: [document_type_id], references: [id], onDelete: Restrict)
+  file_path           String
+  file_name           String
+  uploaded_by_user_id Int
+  uploaded_by         User         @relation(fields: [uploaded_by_user_id], references: [id], onDelete: Restrict)
+  created_at          DateTime     @default(now())
+
+  @@map("document")
+}
+
+model VehicleImage {
+  id                  Int      @id @default(autoincrement())
+  vehicle_id          Int
+  vehicle             Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  file_path           String
+  file_name           String
+  uploaded_by_user_id Int
+  uploaded_by         User     @relation(fields: [uploaded_by_user_id], references: [id], onDelete: Restrict)
+  created_at          DateTime @default(now())
+
+  @@map("vehicle_image")
+}
+
+model Ticket {
+  id                  Int      @id @default(autoincrement())
+  vehicle_id          Int
+  vehicle             Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  group_name          String?
+  subject             String
+  body                String
+  created_by_user_id  Int
+  created_by          User     @relation(fields: [created_by_user_id], references: [id], onDelete: Restrict)
+  created_at          DateTime @default(now())
+
+  @@map("ticket")
+}
+
+model ChangeLog {
+  id                  Int      @id @default(autoincrement())
+  vehicle_id          Int
+  vehicle             Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  field_name          String
+  old_value           String?
+  new_value           String?
+  changed_by_user_id  Int
+  changed_by          User     @relation(fields: [changed_by_user_id], references: [id], onDelete: Restrict)
+  changed_at          DateTime @default(now())
+
+  @@map("change_log")
+}
